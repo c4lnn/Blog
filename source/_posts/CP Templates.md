@@ -2364,59 +2364,61 @@ void tarjan(int u) {
 - 最大流最小割定理：网络流图中，最大流的值等于最小割的容量
 
 ```cpp
-const int INF=0x3f3f3f3f;
-int n,s,t,d[N],cur[N];
-VI g[N];
-VPII e;
-void init() {
-    for(int i=1;i<=n;i++) g[i].clear();
-    e.clear();
-}
-void add_edge(int u,int v,int c) {
-    e.EB(v,c);
-    e.EB(u,0);
-    g[u].PB(SZ(e)-2);
-    g[v].PB(SZ(e)-1);
-}
-bool bfs() {
-    for(int i=1;i<=n;i++) d[i]=0;
-    queue<int> q;
-    q.push(s);
-    d[s]=1;
-    while(SZ(q)) {
-        int u=q.front();
-        q.pop();
-        for(auto x:g[u]) {
-            int v=e[x].FI,c=e[x].SE;
-            if(d[v]||c<=0) continue;
-            d[v]=d[u]+1;
-            q.push(v);
+struct MAXIMUM_FLOW {
+    const int INF=0x3f3f3f3f;
+    int n,s,t,d[N],cur[N];
+    VI g[N];
+    VPII e;
+    void init() {
+        for(int i=1;i<=n;i++) g[i].clear();
+        e.clear();
+    }
+    void add_edge(int u,int v,int c) {
+        e.EB(v,c);
+        e.EB(u,0);
+        g[u].PB(SZ(e)-2);
+        g[v].PB(SZ(e)-1);
+    }
+    bool bfs() {
+        for(int i=1;i<=n;i++) d[i]=0;
+        queue<int> q;
+        q.push(s);
+        d[s]=1;
+        while(SZ(q)) {
+            int u=q.front();
+            q.pop();
+            for(auto x:g[u]) {
+                int v=e[x].FI,c=e[x].SE;
+                if(d[v]||c<=0) continue;
+                d[v]=d[u]+1;
+                q.push(v);
+            }
         }
+        return d[t];
     }
-    return d[t];
-}
-int dfs(int u,int a) { // 多路增广
-    if(u==t) return a;
-    int f,flow=0;
-    for(int &i=cur[u];i<SZ(g[u]);i++) {
-        int v=e[g[u][i]].FI,&c=e[g[u][i]].SE;
-        if(d[v]!=d[u]+1||c<=0||(f=dfs(v,min(a,c)))<=0) continue;
-        c-=f;
-        e[g[u][i]^1].SE+=f;
-        a-=f;
-        flow+=f;
-        if(a==0) break;
+    int dfs(int u,int a) {
+        if(u==t) return a;
+        int f,flow=0;
+        for(int &i=cur[u];i<SZ(g[u]);i++) {
+            int v=e[g[u][i]].FI,&c=e[g[u][i]].SE;
+            if(d[v]!=d[u]+1||c<=0||(f=dfs(v,min(a,c)))<=0) continue;
+            c-=f;
+            e[g[u][i]^1].SE+=f;
+            a-=f;
+            flow+=f;
+            if(a==0) break;
+        }
+        return flow;
     }
-    return flow;
-}
-int dinic() {
-    int flow=0;
-    while(bfs()) {
-        for(int i=1;i<=n;i++) cur[i]=0;
-        flow+=dfs(s,INF);
+    int dinic() {
+        int flow=0;
+        while(bfs()) {
+            for(int i=1;i<=n;i++) cur[i]=0;
+            flow+=dfs(s,INF);
+        }
+        return flow;
     }
-    return flow;
-}
+}mf;
 ```
 
 ### 最小费用最大流
@@ -2917,7 +2919,8 @@ $$h(x)=\sum_{d\mid x}f(d)g(x/d)=\sum_{ab=x}f(a)g(b)$$
 - $\varepsilon=\mu *1\iff\varepsilon(n)=\sum_{d\mid n}\mu(d)$
 - $d=1*1\iff d(n)=\sum_{d\mid n}1$
 - $\sigma=\operatorname{id}*1\iff \sigma(n)=\sum_{d\mid n}d$
-- $\varphi=\mu*\operatorname{id}\iff\varphi(n)=\sum_{d\mid n}{d\cdot\mu(n/d)}$
+- $\operatorname{id}=\varphi*1\iff n=\sum_{d\mid n}{\varphi(d)}$
+- $\varphi=\operatorname{id}*\mu\iff\varphi(n)=\sum_{d\mid n}{\mu(d)(n/d)}$
 
 ### 欧拉函数
 
@@ -3033,9 +3036,7 @@ void prime_seive(int n) {
 }
 ```
 
-### 线性筛 & 欧拉函数
-
-$1\sim N$ 与 $N$ 互质的数的个数被称为欧拉函数，记为 $\varphi(N)$
+###  线性筛 & 欧拉函数
 
 $\varphi(N)=N * \prod_{p\mid N}{(1-\frac{1}{p})}$（$p$ 为质数）
 
@@ -3054,6 +3055,7 @@ void get_phi(int n) {
     }
 }
 ```
+
 ### 线性筛 & 莫比乌斯函数
 
 ```cpp
@@ -3070,6 +3072,82 @@ void get_mu(int n) {
             mu[x*i]=-mu[i];
         }
     }
+}
+```
+
+### 杜教筛
+
+求 $S(n)=\sum_{i=1}^n{f(i)}$，其中 $f$ 是一个数论函数。
+
+构造一个积性函数 $g$，求 $g*f$ 的前缀和：
+
+$\begin{aligned}
+\sum_{i=1}^n(g*f)(i)= & \sum_{i=1}^n\sum_{d\mid i}{g(d)f(\frac{i}{d})} \\
+= & \sum_{d=1}^ng(d)\sum_{d\mid i}f(\frac{i}{d}) \\
+= & \sum_{d=1}^ng(d)\sum_{i=1}^{\lfloor\frac{n}{d}\rfloor}{f(i)} \\
+= & \sum_{d=1}^ng(d)S(\lfloor\frac{n}{d}\rfloor)
+\end{aligned}$
+
+容斥一下，有 $g(1)S(n)=\sum_{i=1}^ng(i)S(\lfloor\frac{n}{i}\rfloor)-\sum_{i=2}^ng(i)S(\lfloor\frac{n}{i}\rfloor)=\sum_{i=1}^n(g*f)(i)-\sum_{i=2}^ng(i)S(\lfloor\frac{n}{i}\rfloor)$。
+
+前半部分是 Dirichlet 卷积的前缀和，后半部分可以数论分块求。
+
+我们要做的是构造一个 $g$ 使 $g*f$ 的前缀和好算。
+
+例子：
+
+1. $\sum_{i=1}^n\mu(i)$
+
+   由 $\sum_{d\mid n}\mu(d)=[n=1]$，选择 $g=1(i)$，那么 $\sum_{i=1}^n{(1*\mu)(i)}=1$，所以 $S(n)=\sum_{i=1}^n{\mu(i)}=1-\sum_{i=2}^nS(\lfloor\frac{n}{i}\rfloor)$。
+
+2. $\sum_{i=1}^n\varphi(i)$
+
+   由 $\sum_{d\mid n}\varphi(d)=n$，选择 $g=1(i)$，那么 $\sum_{i=1}^n{(1*\varphi)(i)}=\frac{n(n+1)}{2}$，所以  $S(n)=\sum_{i=1}^n{\varphi(i)}=\frac{n(n+1)}{2}-\sum_{i=2}^nS(\lfloor\frac{n}{i}\rfloor)$。
+
+要能够由此计算 $S(n)$，对 $f,g$ 有一些要求：
+
+- $f*g$ 能够快速求前缀和。
+- $g$ 能够快速求分段和（前缀和）。
+
+线性筛预处理 $S$ 的前 $n^{\frac{2}{3}}$ 项，剩余部分的时间复杂度为 $O(n^{\frac{2}{3}})$，对于较大的值，用 map 存其对应的值。
+
+```cpp
+LL mn[N],phi[N],mu[N];
+VI p;
+unordered_map<LL,LL> _phi,_mu;
+void init(int n) {
+    phi[1]=mu[1]=1;
+    for(int i=2;i<=n;i++) {
+        if(!mn[i]) mn[i]=i,mu[i]=-1,phi[i]=i-1,p.PB(i);
+        for(auto x:p) {
+            if(x*i>n) break;
+            mn[x*i]=x;
+            if(i%x==0) {mu[x*i]=0,phi[x*i]=phi[i]*x;break;}
+            mu[x*i]=-mu[i];
+            phi[x*i]=i%x?phi[i]*(x-1):phi[i]*x;
+        }
+    }
+    for(int i=1;i<=n;i++) phi[i]+=phi[i-1],mu[i]+=mu[i-1];
+}
+LL calc_phi(LL n) {
+    if(n<=LIM) return phi[n];
+    if(_phi.count(n)) return _phi[n];
+    LL ret=0;
+    for(LL l=2,r;l<=n;l=r+1) {
+        r=n/(n/l);
+        ret+=(r-l+1)*calc_phi(n/l);
+    }
+    return _phi[n]=n*(n+1)/2-ret;
+}
+LL calc_mu(LL n) {
+    if(n<=LIM) return mu[n];
+    if(_mu.count(n)) return _mu[n];
+    LL ret=0;
+    for(LL l=2,r;l<=n;l=r+1) {
+        r=n/(n/l);
+        ret+=(r-l+1)*calc_mu(n/l);
+    }
+    return _mu[n]=1-ret;
 }
 ```
 
