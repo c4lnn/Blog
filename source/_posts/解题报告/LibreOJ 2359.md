@@ -1,7 +1,7 @@
 ---
 title: LibreOJ 2359. 天天爱跑步
 date: 2021-06-10 16:01:50
-tags: [差分,前缀和,LCA]
+tags: [树上差分,LCA]
 categories: 解题报告
 mathjax: true
 ---
