@@ -258,34 +258,36 @@ int find(const string &s) {
 - 多组数据字符集大小不一样时，初始化按最大字符集大小处理
 
 ```cpp
-int tr[N][M],fail[N],sz; // fail指针指向与当前前缀匹配的最长后缀的位置
-void init() {
-    for(int i=0;i<=sz;i++) {
-        for(int j=0;j<M;j++) tr[i][j]=0;
-    	fail[i]=0;
+struct AC {
+    int tr[N][26],fail[N],sz; // fail 指针指向与当前前缀匹配的最长后缀的位置
+    void init() {
+        for(int i=0;i<=sz;i++) {
+            for(int j=0;j<26;j++) tr[i][j]=0;
+        	fail[i]=0;
+        }
+        sz=0;
     }
-    sz=0;
-}
-void insert(const string &s) {
-    int u=0;
-    for(auto c:s) {
-        int v=c-'a';
-        if(!tr[u][v]) tr[u][v]=++sz;
-        u=tr[u][v];
-    }
-}
-void build() {
-    queue<int> q;
-    for(int v=0;v<M;v++) if(tr[0][v]) q.push(tr[0][v]);
-    while(SZ(q)) {
-        int u=q.front();
-        q.pop();
-        for(int v=0;v<M;v++) {
-            if(tr[u][v]) fail[tr[u][v]]=tr[fail[u]][v],q.push(tr[u][v]);
-            else tr[u][v]=tr[fail[u]][v];
+    void insert(const string &s) {
+        int u=0;
+        for(auto c:s) {
+            int v=c-'a';
+            if(!tr[u][v]) tr[u][v]=++sz;
+            u=tr[u][v];
         }
     }
-}
+    void build() {
+        queue<int> q;
+        for(int v=0;v<26;v++) if(tr[0][v]) q.push(tr[0][v]);
+        while(SZ(q)) {
+            int u=q.front();
+            q.pop();
+            for(int v=0;v<26;v++) {
+                if(tr[u][v]) fail[tr[u][v]]=tr[fail[u]][v],q.push(tr[u][v]);
+                else tr[u][v]=tr[fail[u]][v];
+            }
+        }
+    }
+} ac;
 ```
 
 ## Hash 字符串
@@ -689,42 +691,44 @@ int query(int x1,int y1,int x2,int y2) {
 
 ## 树状数组
 
-- 单点修改查询
+- 单点修改 & 单点查询 & 区间查询
 
 ```cpp
-int lowbit(int x) {
-    return x&-x;
-}
+int n,b[N];
 void update(int x,int v) {
-    for(int i=x;i<=n;i+=lowbit(i)) c[i]+=v;
+    for(int i=x;i<=n;i+=i&-i) b[i]+=v;
 }
 int query(int x) {
-    int res=0;
-    for(int i=x;i;i-=lowbit(i)) res+=c[i];
-    return res;
+    int ret=0;
+    for(int i=x;i;i-=i&-i) ret+=b[i];
+    return ret;
+}
+int query(int l,int r) {
+    int ret=0;
+    for(int i=r;i;i-=i&-i) ret+=b[i];
+    for(int i=l-1;i;i-=i&-i) ret-=b[i];
+    return ret;
 }
 ```
 
-- 区间修改查询
+- 区间修改 & 单点查询 & 区间查询
 
 ```cpp
-int lowbit(int x) {
-    return x&-x;
-}
-void update(int x,int v) {
-    for(int i=x;i<=n;i+=lowbit(i)) c[i]+=v,d[i]+=x*v;
+int n,b[N],c[N];
+void update(int l,int r,int v) {
+    for(int i=l;i<=n;i+=i&-i) b[i]+=v,c[i]+=l*v;
+    for(int i=r+1;i<=n;i+=i&-i) b[i]-=v,c[i]-=(r+1)*v;
 }
 int query(int x) {
-    int res=0;
-    for(int i=x;i;i-=lowbit(i)) res+=(x+1)*c[i]-d[i];
-    return res;
+    int ret=0;
+    for(int i=x;i;i-=i&-i) ret+=(x+1)*b[i]-c[i];
+    return ret;
 }
-void rangeUpdate(int l,int r,int v) {
-    update(l,v);
-    update(r+1,-v);
-}
-int rangeQuery(int l,int r) {
-    return query(r)-query(l-1);
+int query(int l,int r) {
+    int ret=0;
+    for(int i=r;i;i-=i&-i) ret+=(r+1)*b[i]-c[i];
+    for(int i=l-1;i;i-=i&-i) ret-=l*b[i]-c[i];
+    return ret;
 }
 ```
 
@@ -1955,7 +1959,7 @@ void build() {
 
 对于有向图 $G$，$G$ 是欧拉图当且仅当 $G$ 的所有顶点属于同一个强连通分量且每个顶点的入度和出度相同
 
-对于有向图 $G$，$G$ 是半欧拉图当且仅当 
+对于有向图 $G$，$G$ 是半欧拉图当且仅当
 
 - 如果将 $G$ 中的所有有向边退化为无向边时，那么 $G$ 的所有顶点属于同一个连通分量。
 
@@ -2235,16 +2239,28 @@ void dfs2(int u,int t) {
 }
 ```
 
-## Dsu on tree
+## 树上启发式合并
 
-一棵树有 $n$ 个结点，每个结点都是一种颜色，每个颜色有一个编号，求树中每个子树的最多的颜色编号的和
+> CF 600E：一棵树有 $n$ 个结点，每个结点都是一种颜色，每个颜色有一个编号，求树中每个子树的最多的颜色编号的和。
+
+用 $cnt_i$ 表示颜色 $i$ 的出现次数。
+
+遍历一个节点 $u$，我们按以下的步骤进行遍历：
+
+- 先遍历 $u$ 的轻（非重）儿子，并计算答案，但不保留遍历后它对 $cnt$ 数组的影响；
+- 遍历它的重儿子，保留它对 $cnt$ 数组的影响；
+- 再次遍历 $u$ 的轻儿子的子树结点，加入这些结点的贡献，以得到 $u$ 的答案。
+
+时间复杂度：$O(n\log(n))$
 
 ```cpp
-void dfs1(int u,int fa) {
+VI g[N];
+int w[N],sz[N],son[N],cnt[N],mx,sn;
+LL sum,res[N];
+void dfs(int u,int fa) {
     sz[u]=1;
-    for(auto v:g[u]) {
-        if(v==fa) continue;
-        dfs1(v,u);
+    for(auto v:g[u]) if(v!=fa) {
+        dfs(v,u);
         sz[u]+=sz[v];
         if(sz[v]>sz[son[u]]) son[u]=v;
     }
@@ -2253,21 +2269,33 @@ void update(int u,int fa,int val) {
     cnt[w[u]]+=val;
     if(cnt[w[u]]>mx) mx=cnt[w[u]],sum=w[u];
     else if(cnt[w[u]]==mx) sum+=w[u];
-    for(auto v:g[u]) {
-        if(v==fa||v==sn) continue;
+    for(auto v:g[u]) if(v!=fa&&v!=sn) {
         update(v,u,val);
     }
 }
 void dsu(int u,int fa,bool op) {
-    for(auto v:g[u]) {
-        if(v==fa||v==son[u]) continue;
+    for(auto v:g[u]) if(v!=fa&&v!=son[u]) {
         dsu(v,u,true);
     }
     if(son[u]) dsu(son[u],u,false),sn=son[u];
     update(u,fa,1);
-    ans[u]=sum;
+    res[u]=sum;
     sn=0;
     if(op) update(u,fa,-1),mx=0,sum=0;
+}
+int main() {
+    int n;cin>>n;
+    for(int i=1;i<=n;i++) cin>>w[i];
+    for(int i=1;i<n;i++) {
+        int u,v;
+        cin>>u>>v;
+        g[u].PB(v);
+        g[v].PB(u);
+    }
+    dfs(1,0);
+    dsu(1,0,true);
+    for(int i=1;i<=n;i++) cout<<res[i]<<" \n"[i==n];
+    return 0;
 }
 ```
 
@@ -2364,8 +2392,8 @@ void tarjan(int u) {
 - 最大流最小割定理：网络流图中，最大流的值等于最小割的容量
 
 ```cpp
+const int INF=0x3f3f3f3f;
 struct MAXIMUM_FLOW {
-    const int INF=0x3f3f3f3f;
     int n,s,t,d[N],cur[N];
     VI g[N];
     VPII e;
@@ -2418,7 +2446,7 @@ struct MAXIMUM_FLOW {
         }
         return flow;
     }
-}mf;
+} mf;
 ```
 
 ### 最小费用最大流
@@ -3397,47 +3425,47 @@ LL solve(int n,int m) {
 
 ```cpp
 struct M {
-    LL a[sz][sz];
+    LL a[N][N];
     void clear() {memset(a,0,sizeof a);}
     M() {clear();}
     void init() {
         clear();
-        for(int i=0;i<sz;i++) a[i][i]=1;
+        for(int i=0;i<N;i++) a[i][i]=1;
     }
     M operator + (const M &T) const {
         M ret;
-        for(int i=0;i<sz;i++)
-            for(int j=0;j<sz;j++)
+        for(int i=0;i<N;i++)
+            for(int j=0;j<N;j++)
                 ret.a[i][j]=(a[i][j]+T.a[i][j])%MOD;
         return ret;
     }
     M operator - (const M &T) const {
         M ret;
-        for(int i=0;i<sz;i++)
-            for(int j=0;j<sz;j++)
+        for(int i=0;i<N;i++)
+            for(int j=0;j<N;j++)
                 ret.a[i][j]=(a[i][j]-T.a[i][j]+MOD)%MOD;
         return ret;
     }
     M operator * (const LL &v) const {
         M ret;
-        for(int i=0;i<sz;i++)
-            for(int j=0;j<sz;j++) if(a[i][j])
+        for(int i=0;i<N;i++)
+            for(int j=0;j<N;j++) if(a[i][j])
                 ret.a[i][j]=a[i][j]*v%MOD;
         return ret;
     }
     M operator * (const M &T) const {
         M ret;
-        for(int i=0;i<sz;i++)
-            for(int k=0;k<sz;k++) if(a[i][k])
-                for(int j=0;j<sz;j++) if(T.a[k][j])
+        for(int i=0;i<N;i++)
+            for(int k=0;k<N;k++) if(a[i][k])
+                for(int j=0;j<N;j++) if(T.a[k][j])
                     ret.a[i][j]=(ret.a[i][j]+a[i][k]*T.a[k][j]%MOD)%MOD;
         return ret;
     }
     M operator ^ (LL b) const {
         M ret,bas;
-        for(int i=0;i<sz;i++) ret.a[i][i]=1;
-        for(int i=0;i<sz;i++)
-            for(int j=0;j<sz;j++)
+        for(int i=0;i<N;i++) ret.a[i][i]=1;
+        for(int i=0;i<N;i++)
+            for(int j=0;j<N;j++)
                 bas.a[i][j]=a[i][j];
         while(b) {
             if(b&1) ret=ret*bas;
@@ -3447,9 +3475,9 @@ struct M {
         return ret;
     }
     void print() {
-        for(int i=0;i<sz;i++)
-            for(int j=0;j<sz;j++)
-                cout<<a[i][j]<<" \n"[j==sz-1];
+        for(int i=0;i<N;i++)
+            for(int j=0;j<N;j++)
+                cout<<a[i][j]<<" \n"[j==N-1];
     }
 };
 ```
