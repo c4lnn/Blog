@@ -3328,6 +3328,7 @@ x & \equiv a_2 \pmod {m_2} \\
 x & \equiv a_k \pmod {m_k}
 \end{cases}
 $$
+
 **算法流程**
 
 1. 计算所有模数的积 $M$
