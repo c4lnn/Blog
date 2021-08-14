@@ -666,15 +666,16 @@ void merge(int x,int y) {
 
 ```cpp
 int a[N],st[25][N];
+int hightbit(int x) {return 31-__builtin_clz(x);}
 void init(int n) {
     for(int i=1;i<=n;i++) st[0][i]=a[i];
-    int t=log2(n);
+    int t=hightbit(n);
     for(int i=1;i<=t;i++)
         for(int j=1;j+(1<<i)-1<=n;j++)
-            st[i][j]=max(st[i-1][j],st[i-1][j+(1<<i-1)]);
+            st[i][j]=max(st[i-1][j],st[i-1][j+(1<<(i-1))]);
 }
 int query(int l,int r) {
-    int k=logn[r-l+1];
+    int k=hightbit(r-l+1);
     return max(st[k][l],st[k][r-(1<<k)+1]);
 }
 ```
@@ -683,21 +684,22 @@ int query(int l,int r) {
 
 ```cpp
 int a[N][N],st[N][N][10][10];
+int hightbit(int x) {return 31-__builtin_clz(x);}
 void init(int n,int m) {
-    int t1=log2(n);
-    int t2=log2(m);
+    int t1=hightbit(n);
+    int t2=hightbit(m);
     for(int i=0;i<=t1;i++)
         for(int j=0;j<=t2;j++)
             for(int k=1;k<=n-(1<<i)+1;k++)
                 for(int l=1;l<=m-(1<<j)+1;l++) {
                     if(!i&&!j) st[k][l][i][j]=a[k][l];
-                    else if(!i) st[k][l][i][j]=max(st[k][l][i][j-1],st[k][l+(1<<j-1)][i][j-1]);
-                    else st[k][l][i][j]=max(st[k][l][i-1][j],st[k+(1<<i-1)][l][i-1][j]);
+                    else if(!i) st[k][l][i][j]=max(st[k][l][i][j-1],st[k][l+(1<<(j-1))][i][j-1]);
+                    else st[k][l][i][j]=max(st[k][l][i-1][j],st[k+(1<<(i-1))][l][i-1][j]);
                 }
 }
 int query(int x1,int y1,int x2,int y2) {
-    int t1=log2(x2-x1+1);
-    int t2=log2(y2-y1+1);
+    int t1=hightbit(x2-x1+1);
+    int t2=hightbit(y2-y1+1);
     return max({st[x1][y1][t1][t2],st[x2-(1<<t1)+1][y1][t1][t2],
                 st[x1][y2-(1<<t2)+1][t1][t2],st[x2-(1<<t1)+1][y2-(1<<t2)+1][t1][t2]});
 }
@@ -822,23 +824,40 @@ int query(int p,int l,int r) {
 
 ## 可持久化线段树
 
+- 区间修改，有两种方法，lazy 标记下传和标记永久化，前者空间需开大。
+
 ```cpp
-// 求区间第 k 小
+// 区间第 k 小
+#include <cstdio>
+using namespace std;
+const int N=1e5+5;
+int n,m,a[N];
 int ls[N<<5],rs[N<<5],sum[N<<5],rt[N],cnt;
-void update(int &p,int q,int l,int r,int x) {
+void update(int &p,int q,int L,int R,int x) {
     p=++cnt;
     ls[p]=ls[q],rs[p]=rs[q],sum[p]=sum[q]+1;
-    if(l==r) return;
-    int mid=l+r>>1;
-    if(x<=mid) update(ls[p],ls[q],l,mid,x);
-    else update(rs[p],rs[q],mid+1,r,x);
+    if(L==R) return;
+    int mid=L+R>>1;
+    if(x<=mid) update(ls[p],ls[q],L,mid,x);
+    else update(rs[p],rs[q],mid+1,R,x);
 }
-int query(int p,int q,int l,int r,int k) {
-    if(l==r) return l;
-    int mid=l+r>>1;
+int query(int p,int q,int L,int R,int k) {
+    if(L==R) return L;
+    int mid=L+R>>1;
     int lsum=sum[ls[q]]-sum[ls[p]];
-    if(k<=lsum) return query(ls[p],ls[q],l,mid,k);
-    else return query(rs[p],rs[q],mid+1,r,k-lsum);
+    if(k<=lsum) return query(ls[p],ls[q],L,mid,k);
+    else return query(rs[p],rs[q],mid+1,R,k-lsum);
+}
+int main() {
+    scanf("%d%d",&n,&m);
+    for(int i=1;i<=n;i++) scanf("%d",&a[i]);
+    for(int i=1;i<=n;i++) update(rt[i],rt[i-1],-1e9,1e9,a[i]);
+    for(int i=1;i<=m;i++) {
+        int l,r,k;
+        scanf("%d%d%d",&l,&r,&k);
+        printf("%d\n",query(rt[l-1],rt[r],-1e9,1e9,k));
+    }
+    return 0;
 }
 ```
 
@@ -1294,26 +1313,29 @@ int kruskal() {
 
 ### Prim 算法
 
+- Prim 算法可以堆优化，但用优先队列实现堆不如直接用 Kruskal 算法。
+- 稠密图和完全图用暴力 Prim 算法比 Kruskal 算法更优，但不一定跑得快，时间复杂度 $O(n^2+m)$。
+
 ```cpp
-bool st[N];
-VPII g[N];
-int prim() {
-    int res=0;
-    priority_queue<PII,VPII,greater<PII>> q;
-    q.emplace(0,1);
-    while(SZ(q)) {
-        int u=q.top().SE,w=q.top().FI;
-        q.pop();
-        if(st[u]) continue;
-        st[u]=true;
-        res+=w;
-        for(auto x:g[u]) {
-            int v=x.FI,w=x.SE;
-            if(st[v]) continue;
-            q.emplace(w,v);
+int w[N][N],f[N];
+bool vis[N];
+int prim(int n) {
+    memset(f,0x3f,sizeof f);
+    memset(vis,false,sizeof vis);
+    f[1]=0;
+    int ret=0;
+    for(int i=1;i<=n;i++) {
+        int x=0;
+        for(int j=1;j<=n;j++) if(!vis[j]&&(x==0||f[j]<f[x])) {
+            x=j;
+        }
+        vis[x]=true;
+        ret+=f[x];
+        for(int j=1;j<=n;j++) if(!vis[j]&&w[x][j]<f[j]) {
+            f[j]=w[x][j];
         }
     }
-    return res;
+    return ret;
 }
 ```
 
@@ -3736,6 +3758,40 @@ void init() {
 }
 ```
 
+## 线性递推数列
+
+### 一阶线性递推数列
+
+对于一阶线性递推数列，形如 $a_{n+1}=pa_n+q$，可采用参数法求通项。
+
+对于 $a_{n+1}=pa_n+q$，设 $a_{n+1}-t=p(a_n-t)$，
+
+得：$q=t-pt$，解出 $t$ 代入上式，用等比数列通项得到：$a_n=p^{n-1}(a_1-t)+t$。
+
+### 二阶线性递推数列
+
+对于二阶线性递推数列，形如 $a_{n+2}=pa_{n+1}+qa_n$ $(q\neq 0)$，可采用特征方程法求通项。
+
+对于 $a_{n+2}=pa_{n+1}+qa_n$，设有 $s$ 和 $r$，使 $a_{n+2}-sa_{n+1}=r(a_{n+1}-sa_{n})$。
+
+得：$s+r=p$，$rs=-q$，易发现这是韦达定理。
+
+那么 $s,r$ 为一元二次方程 $x^2-px-q=0$ 的解。
+
+称一元二次方程 $x^2-px-q=0$ 为递推数列 $a_{n+2}=pa_{n+1}+qa_n$ $(q\neq 0)$ 的特征方程。
+
+在等式 $a_{n+2}-sa_{n+1}=r(a_{n+1}-sa_{n})$ 中，易发现 $s,r$ 是可以交换的。
+
+那么可以得到方程组：
+
+$\begin{cases}
+a_{n+2}-sa_{n+1}=r^{n-1}(a_2-sa_1) \\
+a_{n+2}-ra_{n+1}=s^{n-1}(a_2-ra_1)
+\end{cases}$
+
+- 若 $s\neq r$，$a_n=\frac{r^{n-1}(a_2-sa_1)-s^{n-1}(a_2-ra_1)}{r-s}$；
+- 若 $s=r$，则 $a=b\neq 0$，$a_n=(2-n)s^{n-1}a_1+(n-1)s^{n-2}a_2$。
+
 ## 概率论
 
 ### 几何分布
@@ -3750,37 +3806,134 @@ $E(x)=\frac{1}{p}$
 
 ### 超几何分布
 
+## 多项式
+
+### FFT
+
+- $n$ 必须超过 $a,b$ 最高指数之和
+- 空间大于 $a,b$ 最高指数之和的两倍
+- 所求系数是整数时，卷积后注意四舍五入
+
+```cpp
+const LD PI=acos(-1);
+namespace FFT {
+    struct C {
+        LD r,i;
+        C(LD r=0,LD i=0):r(r),i(i) {}
+        C operator + (const C &T) const {
+            return C(r+T.r,i+T.i);
+        }
+        C operator - (const C &T) const {
+            return C(r-T.r,i-T.i);
+        }
+        C operator * (const C &T) const {
+            return C(r*T.r-i*T.i,r*T.i+i*T.r);
+        }
+    };
+    void FFT(C x[],int n,int on) {
+        VI rev(n);
+        for(int i=0;i<n;i++) {
+            rev[i]=rev[i>>1]>>1|(i&1?n>>1:0);
+            if(i<rev[i]) swap(x[i],x[rev[i]]);
+        }
+        for(int mid=1;mid<n;mid<<=1) {
+            C wn(cos(PI/mid),sin(on*PI/mid));
+            for(int i=0;i<n;i+=(mid<<1)) {
+                C w(1,0);
+                for(int j=0;j<mid;j++,w=w*wn) {
+                    C t1=x[i+j],t2=w*x[i+j+mid];
+                    x[i+j]=t1+t2,x[i+j+mid]=t1-t2;
+                }
+            }
+        }
+        if(on==-1) for(int i=0;i<n;i++) x[i].r/=n;
+    }
+    void conv(C a[],C b[],int n) {
+        FFT(a,n,1);
+        FFT(b,n,1);
+        for(int i=0;i<n;i++) a[i]=a[i]*b[i];
+        FFT(a,n,-1);
+    }
+}
+```
+
+### NTT
+
+- $998244353,1004535809,469762049$ 原根都为 $3$
+
+```cpp
+namespace NTT {
+   const LL G=3,MOD=998244353;
+   LL qpow(LL a,LL b) {
+       LL ret=1;
+       while(b) {
+           if(b&1) ret=ret*a%MOD;
+           a=a*a%MOD;
+           b>>=1;
+       }
+       return ret;
+   }
+    void NTT(LL x[],int n,int on) {
+        VI rev(n);
+        for(int i=0;i<n;i++) {
+            rev[i]=rev[i>>1]>>1|(i&1?n>>1:0);
+            if(i<rev[i]) swap(x[i],x[rev[i]]);
+        }
+        for(int mid=1;mid<n;mid<<=1) {
+            LL wn=qpow(on==1?G:qpow(G,MOD-2),(MOD-1)/(mid<<1));
+            for(int i=0;i<n;i+=(mid<<1)) {
+                LL w=1;
+                for(int j=0;j<mid;j++,w=w*wn%MOD) {
+                    LL t1=x[i+j],t2=w*x[i+j+mid]%MOD;
+                    x[i+j]=(t1+t2)%MOD,x[i+j+mid]=(t1-t2+MOD)%MOD;
+                }
+            }
+        }
+        if(on==-1) {
+            LL inv=qpow(n,MOD-2);
+            for(int i=0;i<n;i++) x[i]=x[i]*inv%MOD;
+        }
+    }
+    void conv(LL a[],LL b[],int n) {
+        NTT(a,n,1);
+        NTT(b,n,1);
+        for(int i=0;i<n;i++) a[i]=a[i]*b[i]%MOD;
+        NTT(a,n,-1);
+    }
+}
+```
+
 ## 博弈论
 
 ### 巴什博弈
 
 一堆 $n$ 个物品，两个人轮流从中取出 $1 \sim m$个，最后取光者胜。
 
-先手必胜条件：$n\%(m+1)=0$。
+先手必败条件：$n\%(m+1)=0$。
 
 ### 威佐夫博弈
 
 有两堆各若干个物品，两个人轮流从任一堆取至少一个或同时从两堆中取同样多的物品，规定每次至少取一个，多者不限，最后取光者得胜。
 
-先手必胜条件：$|n-m|*\frac{1+\sqrt{5}}{2}=\min(n,m)$。
+先手必败条件：$|n-m|*\frac{1+\sqrt{5}}{2}=\min(n,m)$。
 
 ### 斐波那契博弈
 
 一堆石子有 $n$ 个，两人轮流取，先取者第一次可以取任意多个，但是不能取完，以后每次取的石子数不能超过上次取子数的 $2$ 倍。取完者胜。
 
-先手必胜条件：$n$ 是斐波那契数。
+先手必败条件：$n$ 是斐波那契数。
 
 ### Nim 游戏
 
 有 $n$ 堆石子，两人轮流取，每次取某堆中不少于 $1$ 个，最后取完者胜。
 
-先手必胜条件：各堆石子数目全部异或后结果等于 $0$。
+先手必败条件：各堆石子数目全部异或后结果等于 $0$。
 
 ### 阶梯 Nim 游戏
 
 有 $n$ 个位置 $1\dots n$，每个位置上有 $a_i$ 个石子。两人轮流操作。每次挑选 $1\dots n$ 中任一一个存在石子的位置 $i$，将至少 $1$ 个石子移动至 $i−1$ 位置（也就是最后所有石子都堆在 $0$ 这个位置），谁不能操作谁输。
 
-先手必胜条件：奇数位置石子数目全部异或后结果等于 $0$。
+先手必败条件：奇数位置石子数目全部异或后结果等于 $0$。
 
 ### 反 Nim 游戏
 
@@ -3956,7 +4109,9 @@ $f_n =
 
 # 计算几何
 
-## 点
+## 二维
+
+### 点
 
 ```cpp
 const DB EPS=1e-8;
@@ -3994,7 +4149,7 @@ struct P {
 };
 ```
 
-## 线
+### 线
 
 ```cpp
 struct L {
@@ -4020,7 +4175,7 @@ struct L {
 };
 ```
 
-## 圆
+### 圆
 
 ```cpp
 struct C {
@@ -4040,7 +4195,7 @@ bool p_in_circle(P p,C c) { // 点是否不在圆外
 }
 ```
 
-## 凸包
+### 凸包
 
 ```cpp
 void andrew() { // 凸包
@@ -4063,7 +4218,7 @@ void andrew() { // 凸包
 }
 ```
 
-## 最小圆覆盖
+### 最小圆覆盖
 
 ```cpp
 C min_circle_cover(const vector<P> &T) {
@@ -4083,6 +4238,39 @@ C min_circle_cover(const vector<P> &T) {
     }
     return {c,r};
 }
+```
+
+## 三维
+
+### 点
+
+```cpp
+struct P {
+    DB x,y,z;
+    P() {}
+    P(DB x,DB y,DB z):x(x),y(y),z(z) {}
+    DB dist(const P &p) {return sqrt((x-p.x)*(x-p.x)+(y-p.y)*(y-p.y)+(z-p.z)*(z-p.z));}
+};
+```
+
+### 球
+
+```cpp
+struct S {
+    P p;
+    DB r;
+    S() {}
+    S(P p,DB r):p(p),r(r) {}
+    DB vol() {return 4*PI*r*r*r/3;} // 体积
+    DB s_s_area(S &T) { // 两球体积交
+        DB d=p.dist(T.p);
+        if(sgn(d-r-T.r)>=0) return 0;
+        if(sgn(d-fabs(r-T.r))<=0) return r<T.r?vol():T.vol();
+        DB h1=r-(r*r-T.r*T.r+d*d)/(2*d);
+        DB h2=T.r-(T.r*T.r-r*r+d*d)/(2*d);
+        return PI/3*(h1*h1*(3*r-h1)+h2*h2*(3*T.r-h2));
+    }
+};
 ```
 
 # 杂项
@@ -4360,7 +4548,7 @@ bign qpow(bign a,bign b,bign m) {
 
 ## 浮点数的精度问题
 
-`int sgn(double x) {return fabs(x)<eps?0:(x>0?1:-1);}`
+`int sgn(DB x) {return fabs(x)<EPS?0:(x>0?1:-1);}`
 
 | 传统意义 | 修正写法1       | 修正写法2         |
 | -------- | --------------- | ----------------- |
@@ -4389,6 +4577,22 @@ mt19937 mt(time(0));
 uniform_int_distribution<int> rd1(0,10000); //   整数
 uniform_real_distribution<double> rd2(0,1); // 浮点数
 cout<<rd1(mt)<<' '<<rd2(mt)<<'\n';
+```
+
+##  __builtin_ 系列函数（位运算）
+
+```cpp
+// 返回最后一个为 1 的位是从后向前的第几位，比如 2(10)，返回 2
+int __builtin_ffs(unsigned int x)
+// 返回前导 0 的个数，比如 2(10)，返回 30，x = 0 时结果未定义
+int __builtin_clz(unsigned int x)
+// 返回末尾0的个数，比如 2(10)，返回 1，x = 0 时结果未定义
+int __builtin_ctz(unsigned int x)
+// 返回 1 的个数
+int __builtin_popcount(unsigned int x)
+// 返回 1 的个数模 2 的结果
+int __builtin_parity(unsigned int x)
+// usigned long long 版本在函数名后加 ll
 ```
 
 ## 细节处理
