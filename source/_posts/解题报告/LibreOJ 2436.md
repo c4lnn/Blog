@@ -1,7 +1,7 @@
 ---
 title: LibreOJ 2436. 糖果
 date: 2021-06-05 21:15:08
-tags: [查分约束,图的连通性,树形 DP]
+tags: [差分约束,图的连通性,树形 DP]
 categories: 解题报告
 mathjax: true
 ---
