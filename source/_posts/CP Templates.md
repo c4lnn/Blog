@@ -2833,7 +2833,7 @@ int edmonds() {
 
 # 数学
 
-## 快速乘
+## 龟速乘
 
 ```cpp
 LL qmul(LL a,LL b,LL m) { // b >= 0
@@ -2864,7 +2864,7 @@ LL qpow(LL a,LL b,LL m) {
 - 防爆 LL
 
 ```cpp
-// 前置模板：快速乘
+// 前置模板：龟速乘
 LL qpow(LL a,LL b,LL m) {
     LL ret=1;
     while(b) {
@@ -2886,7 +2886,7 @@ LL qpow(LL a,LL b,LL m) {
 - <http://miller-rabin.appspot.com>
 
 ```cpp
-// 前置模板：快速乘、快速幂
+// 前置模板：龟速乘、快速幂
 bool check(LL a,LL n) {
     if(n==2) return true;
     if(n==1||!(n&1)) return false;
@@ -3381,7 +3381,7 @@ $$
 3. 方程组的特解为：$Y=\sum_{i=1}^k a_i c_i \pmod M$，通解为 $kM+Y(k\in \mathbb Z)$
 
 ```cpp
-// 前置模板：快速乘，扩展欧几里得
+// 前置模板：龟速乘，扩展欧几里得
 LL crt(LL *m,LL *a,int n) {
     LL M=1,res=0;
     for(int i=1;i<=n;i++) M*=m[i];
@@ -3409,7 +3409,7 @@ LL crt(LL *m,LL *a,int n) {
 两两合并多个方程，能得出特解 $x$，通解为 $k*\text{lcm}(m_1,m_2,\cdots,m_n)+x(k\in \mathbb Z)$
 
 ```cpp
-// 前置模板：快速乘，扩展欧几里得
+// 前置模板：龟速乘，扩展欧几里得
 LL excrt(LL *m,LL *a,int n) {
     if(!n) return 0;
     LL M=m[1],A=a[1],x,y;
@@ -3499,6 +3499,66 @@ LL solve(int n,int m) {
         res+=1ll*(r-l+1)*(n/l)*(m/l);
     }
     return res;
+}
+```
+## 二次剩余
+
+一个数 $a$，如果不是 $p$ 的倍数且模 $p$ 同余于某个数的平方，则称 $a$ 为模 $p$ 的 二次剩余。
+
+而一个不是 $p$ 的倍数的数 $b$，不同余于任何数的平方，则称 $b$ 为模 $p$ 的 非二次剩余。
+
+$x^2\equiv n\pmod{p}$​（$n>0$，$p$​​ 为质数），对常数 $n$ 求 $x$。
+
+当解得 $x>0$ 时， $p-x$​ 也是一个解。
+
+### Cipolla 算法
+
+- 时间复杂度：$O(\log p)$
+
+```cpp
+LL w;
+struct C {
+    LL r,i;
+    C() {}
+    C(LL r,LL i):r(r),i(i) {}
+};
+C mul(C a,C b,LL p) {
+    C ret=C(0,0);
+    ret.r=((a.r*b.r%p+a.i*b.i%p*w%p)%p+p)%p;
+    ret.i=((a.r*b.i%p+a.i*b.r%p)%p+p)%p;
+    return ret;
+}
+LL qpow_r(LL a,LL b,LL p) {
+    LL ret=1;
+    while(b) {
+        if(b&1) ret=ret*a%p;
+        a=a*a%p;
+        b>>=1;
+    }
+    return ret;
+}
+LL qpow_i(C a,LL b,LL p) {
+    C ret=C(1,0);
+    while(b) {
+        if(b&1) ret=mul(ret,a,p);
+        a=mul(a,a,p);
+        b>>=1;
+    }
+    return ret.r;
+}
+LL cioplla(LL n,LL p) {
+    n%=p;
+    if(!n) return 0;
+    if(p==2) return n;
+    if(qpow_r(n,(p-1)/2,p)==p-1) return -1;
+    LL a;
+    for(;;) {
+        a=rand()%p;
+        w=((a*a%p-n)%p+p)%p;
+        if(qpow_r(w,(p-1)/2,p)==p-1) break;
+    }
+    C x=C(a,1);
+    return qpow_i(x,(p+1)/2,p);
 }
 ```
 
@@ -4121,27 +4181,30 @@ struct P {
     DB x,y;
     P() {}
     P(DB x,DB y):x(x),y(y) {}
-
     bool operator == (const P &a) const {return !sgn(x-a.x)&&!sgn(y-a.y);}
     bool operator < (const P &a) const {return sgn(x-a.x)<0||sgn(x-a.x)==0&&sgn(y-a.y)<0;}
-
     P operator + (const P &a) const {return P(x+a.x,y+a.y);}
     P operator - (const P &a) const {return P(x-a.x,y-a.y);}
     P operator * (const DB &k) const {return P(x*k,y*k);}
     P operator / (const DB &k) const {return P(x/k,y/k);}
-
-    DB operator * (const P &a) const {return x*a.x+y*a.y;}  // 点积
-    DB operator ^ (const P &a) const {return x*a.y-y*a.x;}  // 叉积
-    // 这个点与 a，b 所成的夹角
+    // 点积
+    DB operator * (const P &a) const {return x*a.x+y*a.y;}
+    // 叉积
+    DB operator ^ (const P &a) const {return x*a.y-y*a.x;}
+    // 这个点与 a, b 所成的夹角
     DB rad(const P &a,const P &b) {return fabs(atan2(fabs((a-*this)^(b-*this)),(a-*this)*(b-*this)));}
-
-    DB len() {return hypot(x,y);}  // 点到原点的距离
-    DB len2() {return x*x+y*y;}  // 点到原点的距离的平方
-    DB dist(const P &p) {return hypot(x-p.x,y-p.y);}  // 两点距离
-
-    P rotleft() {return P(-y,x);}  // 绕原点逆时针旋转 90 度
-    P rotright() {return P(y,-x);}  // 绕原点顺时针旋转 90 度
-    P rotate(const P &p,const DB &angle) {  // 绕 P 点逆时针旋转 angle 度
+    // 点到原点的距离
+    DB len() {return hypot(x,y);}
+    // 点到原点的距离的平方
+    DB len2() {return x*x+y*y;}
+    // 两点距离
+    DB dist(const P &p) {return hypot(x-p.x,y-p.y);}
+    // 绕原点逆时针旋转 90 度
+    P rotleft() {return P(-y,x);}
+    // 绕原点顺时针旋转 90 度
+    P rotright() {return P(y,-x);}
+    // 绕 P 点逆时针旋转 angle 度
+    P rotate(const P &p,const DB &angle) {
         P v=*this-p;
         DB c=cos(angle),s=sin(angle);
         return P(p.x+v.x*c-v.y*s,p.y+v.x*s+v.y*c);
@@ -4183,15 +4246,50 @@ struct C {
     DB r;
     C() {}
     C(P p,DB r):p(p),r(r) {}
+    DB area() {return PI*r*r;}
+    DB circumference() {return 2*PI*r;}
+    // 点和圆的关系
+    // 2 圆外
+    // 1 圆上
+    // 0 圆内
+    int p_relation(P a) {
+        DB d=p.dist(a);
+        if(sgn(d-r)<0) return 0;
+        if(sgn(d-r)==0) return 1;
+        return 2;
+    }
+    // 圆与圆的关系
+    // 5 相离
+    // 4 外切
+    // 3 相交
+    // 2 内切
+    // 1 内含
+    int c_relation(C c) {
+        DB d=p.dist(c.p);
+        if(sgn(d-r-c.r)>0) return 5;
+        if(sgn(d-r-c.r)==0) return 4;
+        DB l=fabs(r-c.r);
+        if(sgn(d-r-c.r)<0&&sgn(d-l)>0) return 3;
+        if(sgn(d-l)==0) return 2;
+        if(sgn(d-l)<0) return 1;
+    }
+    DB c_area(C c) {
+        int rel=c_relation(c);
+        if(rel>=4) return 0;
+        if(rel<=2) return min(area(),c.area());
+        DB d=p.dist(c.p);
+        DB hf=(r+c.r+d)/2;
+        DB ss=2*sqrt(hf*(hf-r)*(hf-c.r)*(hf-d));
+        DB a1=acos((r*r+d*d-c.r*c.r)/(2*r*d))*r*r;
+        DB a2=acos((c.r*c.r+d*d-r*r)/(2*c.r*d))*c.r*c.r;
+        return a1+a2-ss;
+    }
 };
 P compute_circle_center(P a,P b) {return(a+b)/2;} // 两点定圆
 P compute_circle_center(P a,P b,P c) { // 三点定圆
     b=(a+b)/2;
     c=(a+c)/2;
     return L(b,b+(a-b).rotright()).cross_point({c,c+(a-c).rotright()});
-}
-bool p_in_circle(P p,C c) { // 点是否不在圆外
-    return sgn(p.dist(c.p)-c.r)<=0;
 }
 ```
 
@@ -4363,8 +4461,8 @@ int find(int l, int r) { // 最大值
 
 ```cpp
 DB find(DB l,DB r) { // 实数二分
-    for(int i=0;i<10000;i++) {
-        DB mid=(l+r)/2.0;
+    for(int i=0;i<100;i++) {
+        DB mid=(l+r)/2;
       	if(check(mid)) l=mid;
       	else r=mid;
     }
@@ -4374,30 +4472,28 @@ DB find(DB l,DB r) { // 实数二分
 
 ## 三分
 
-- 三分用来寻找单峰函数或单谷函数的极值
--  以寻找极大值为例
+- 三分用来寻找凸函数或凹函数的极值
+-  以寻找凸函数的极大值为例
 -  实数三分
 
 ```cpp
-DB EPS=1e-8;
-while(r-l>EPS) {
+for(int i=0;i<100;i++) {
     DB mid=(r-l)/3.0;
     if(calc(l+mid)>calc(r-mid)) r=r-mid;
     else l=l+mid;
 }
-cout<<calc(l)<<'\n';
+mx=calc(l);
 ```
 
 - 整数三分
 
 ```cpp
-while(r-l>10) {
-    int mid=(r-l)/3;
-    if(calc(l+mid)>calc(r-mid)) r=r-mid;
-    else l=l+mid;
+while(l<r) {
+    int lmid=l+(r-l)/3,rmid=r-(r-l)/3;
+    if(calc(lmid)>calc(rmid)) r=rmid-1;
+    else l=lmid+1;
 }
-for(int i=l;i<=r;i++) ans=max(ans,calc(i));
-cout<<ans<<'\n';
+mx=calc(l);
 ```
 
 ## 高精度
@@ -4582,7 +4678,7 @@ cout<<rd1(mt)<<' '<<rd2(mt)<<'\n';
 ##  __builtin_ 系列函数（位运算）
 
 ```cpp
-// 返回最后一个为 1 的位是从后向前的第几位，比如 2(10)，返回 2
+// 返回最低位的 1 是从后向前的第几位，比如 2(10)，返回 2
 int __builtin_ffs(unsigned int x)
 // 返回前导 0 的个数，比如 2(10)，返回 30，x = 0 时结果未定义
 int __builtin_clz(unsigned int x)
