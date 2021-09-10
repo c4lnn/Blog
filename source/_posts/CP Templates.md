@@ -1167,6 +1167,153 @@ int main() {
 }
 ```
 
+## 莫队
+
+### 普通莫队
+
+对于长度为 $n$ 的序列上的 $m$ 次区间询问问题，如果从 $[l,r]$ 的答案能够 $O(1)$ 扩展到 $[l-1,r],[l+1,r],[l,r-1],[l,r+1]$ 的答案，可以在 $O(n\sqrt m)$ 的复杂度内求出所有询问的答案。
+
+实现：离线后排序，顺序处理每个询问，暴力从上一个区间的答案转移到下一个区间答案（一步一步移动即可）。
+
+排序方法：设定块的长度为 $S$，取 $S=\lceil\frac{n}{\sqrt m}\rceil$，按照 $(\lfloor\frac l {S}\rfloor,r)$ 的二元组从小到大排序。
+
+奇偶优化：设块的编号从 $1$ 开始，对于属于奇数块的询问，$r$ 按从小到大排序，对于属于偶数块的排序，$r$ 从大到小排序。
+
+```cpp
+// SPOJ DQUERY 区间不同数的个数的查询
+// 数组均从 0 开始
+int n,m,unit,ans,a[30005],cnt[1000005],res[200005];
+struct Q {
+    int l,r,id;
+    Q() {}
+    Q(int l,int r,int id):l(l),r(r),id(id) {}
+    bool operator < (const Q &T) const {
+        if(l/unit!=T.l/unit) return l<T.l;
+        if((l/unit)&1) return r>T.r;
+        return r<T.r;
+    }
+} q[200005];
+void move(int x,int v) {
+    if(v==-1&&--cnt[a[x]]==0) --ans;
+    if(v==1&&++cnt[a[x]]==1) ++ans;
+}
+void mo() {
+    unit=int(ceil(n/pow(n,0.5)));
+    sort(q,q+m);
+    int l=0,r=-1;
+    for(int i=0;i<m;i++) {
+        while(l>q[i].l) move(--l,1);
+        while(r<q[i].r) move(++r,1);
+        while(l<q[i].l) move(l++,-1);
+        while(r>q[i].r) move(r--,-1);
+        res[q[i].id]=ans;
+    }
+}
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cin>>n;
+    for(int i=0;i<n;i++) cin>>a[i];
+    cin>>m;
+    for(int i=0;i<m;i++) {
+        cin>>q[i].l>>q[i].r;
+        --q[i].l,--q[i].r;
+        q[i].id=i;
+    }
+    mo();
+    for(int i=0;i<m;i++) cout<<res[i]<<'\n';
+    return 0;
+}
+```
+
+### 带修莫队
+
+因为多了修改操作，所以在普通莫队的基础上多加一个时间轴 $t$，可以在 $O(\sqrt[3]{n^4t})$ 的复杂度内求出所有询问的答案。
+
+排序方法：设定块的长度为 $S$，取 $S=\lceil\sqrt[3]{nt}\rceil$，按照 $(\lfloor\frac l {S}\rfloor, \lfloor\frac r {S}\rfloor, t)$ 的三元组从小到大排序。
+
+```cpp
+// BZOJ 2120 带修改的区间不同数的个数的查询
+int n,m,unit,t=1,ans,a[10005],cnt[1000005],pre[10005],res[10005];
+struct R {
+    int x,v,pre;
+    R() {}
+    R(int x,int v,int pre):x(x),v(v),pre(pre) {}
+} b[1005];
+struct Q {
+    int l,r,t,id;
+    Q() {}
+    Q(int l,int r,int t,int id):l(l),r(r),t(t),id(id) {}
+    bool operator < (const Q &T) const {
+        if(l/unit!=T.l/unit) return l<T.l;
+        if(r/unit!=T.l/unit) return r<T.r;
+        return t<T.t;
+    }
+};
+vector<Q> q;
+void update_t(int t,int l,int r,int v) {
+    if(v==1) {
+        if(b[t].x>=l&&b[t].x<=r) {
+            if(--cnt[b[t].pre]==0) --ans;
+            if(++cnt[b[t].v]==1) ++ans;
+        }
+        a[b[t].x]=b[t].v;
+    }
+    else {
+        if(b[t].x>=l&&b[t].x<=r) {
+            if(--cnt[b[t].v]==0) --ans;
+            if(++cnt[b[t].pre]==1) ++ans;
+        }
+        a[b[t].x]=b[t].pre;
+    }
+}
+void update(int x,int v) {
+    if(v==-1&&--cnt[a[x]]==0) --ans;
+    if(v==1&&++cnt[a[x]]==1) ++ans;
+}
+void mo() {
+    unit=int(ceil(pow(n*t,1.0/3)));
+    sort(ALL(q));
+    int t=1,l=0,r=-1;
+    for(auto x:q) {
+        while(t<x.t) update_t(++t,l,r,1);
+        while(t>x.t) update_t(t--,l,r,-1);
+        while(l>x.l) update(--l,1);
+        while(r<x.r) update(++r,1);
+        while(l<x.l) update(l++,-1);
+        while(r>x.r) update(r--,-1);
+        res[x.id]=ans;
+    }
+    for(int i=0;i<SZ(q);i++) cout<<res[i]<<'\n';
+}
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cin>>n>>m;
+    for(int i=0;i<n;i++) {
+        cin>>a[i];
+        pre[i]=a[i];
+    }
+    int cnt_q=0;
+    for(int i=0;i<m;i++) {
+        char o;cin>>o;
+        if(o=='R') {
+            int x,v;cin>>x>>v;
+            --x;
+            b[++t]=R(x,v,pre[x]);
+            pre[x]=v;
+        }
+        else {
+            int l,r;cin>>l>>r;
+            --l,--r;
+            q.EB(l,r,t,cnt_q++);
+        }
+    }
+    mo();
+    return 0;
+}
+```
+
 # 图论
 
 ## 最短路
@@ -4371,7 +4518,9 @@ struct S {
 };
 ```
 
-# 杂项
+## 其它
+
+- 圆台体积公式：$V=\frac1 3\pi h(R^2+r^2+Rr)$ （$r$ 为上底半径、$R$ 为下底半径、$h$ 为高）# 杂项
 
 ## 排序
 
