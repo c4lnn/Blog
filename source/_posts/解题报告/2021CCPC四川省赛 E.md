@@ -1,5 +1,5 @@
 ---
-title: 2021 四川省大学生程序设计竞赛 E. Don’t Really Like How The Story Ends
+title: 2021CCPC四川省赛 E. Don’t Really Like How The Story Ends
 date: 2021-06-27 23:33:20
 tags: [搜索]
 categories: 解题报告

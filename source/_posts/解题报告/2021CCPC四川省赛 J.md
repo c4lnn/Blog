@@ -1,5 +1,5 @@
 ---
-title: 2021 四川省大学生程序设计竞赛 J. Ants
+title: 2021CCPC四川省赛 J. Ants
 date: 2021-06-29 11:53:31
 tags: [思维]
 categories: 解题报告

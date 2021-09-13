@@ -1,5 +1,5 @@
 ---
-title: 2021 山东省大学生程序设计竞赛 C. Cat Virus
+title: 2021CCPC山东省赛 C. Cat Virus
 date: 2021-07-01 13:41:51
 tags: [构造]
 categories: 解题报告

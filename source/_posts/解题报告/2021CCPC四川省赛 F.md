@@ -1,5 +1,5 @@
 ---
-title: 2021 四川省大学生程序设计竞赛 F. Direction Setting
+title: 2021CCPC四川省赛 F. Direction Setting
 date: 2021-06-27 15:13:57
 tags: [最大流]
 categories: 解题报告
