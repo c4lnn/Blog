@@ -1,7 +1,7 @@
 ---
 title: 2021CCPC东北省赛 A. Matrix
 date: 2021-09-13 22:40:49
-tags: []
+tags: [组合数学]
 categories: 解题报告
 mathjax: true
 ---
@@ -14,7 +14,7 @@ mathjax: true
 
 将 $1\sim n^2$ 填进 $n*n$ 的矩阵中。
 
-记 $a_i$ 为第 $i$ 行最小的元素，$S=\{a1,a2,...,an\}\cap\{1,2,...,n\}$。
+记 $a_i$ 为第 $i$ 行最小的元素，$S=\{a_1,a_2,...,a_n\}\cap\{1,2,...,n\}$。
 
 考虑所有填充方法，求 $\sum{|S|}$。
 
