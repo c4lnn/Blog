@@ -1,6 +1,6 @@
 ---
-title: 2021中国大学生程序设计竞赛（CCPC）- 网络选拔赛（重赛）
-date:
+title: The 2021 CCPC Regionals Online Contest (II)
+date: 2021-10-20 23:33:57
 tags: [STL,二分,DP,并查集]
 categories: 套题
 mathjax: true
