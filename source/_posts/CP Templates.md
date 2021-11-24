@@ -3026,7 +3026,7 @@ LL qpow(LL a,LL b,LL m) {
 
 ## Miller-Rabin 素性测试
 
-- 二次探测定理：如果 p 是奇素数，则 $x^2\equiv 1\pmod p$ 的解为 $x\equiv 1 \pmod p$ 或者 $x\equiv p-1 \pmod p$
+- 二次探测定理：如果 $p$ 是奇素数，则 $x^2\equiv 1\pmod p$ 的解为 $x\equiv 1 \pmod p$ 或者 $x\equiv p-1 \pmod p$
 - int 范围内只需检查 $2, 7, 61$
 - long long 范围内 $2, 325, 9375, 28178, 450775, 9780504, 1795265022$
 - $3e15$ 内 $2, 2570940, 880937, 610386380, 4130785767$
@@ -4560,9 +4560,9 @@ void quick_sort(int l,int r) {
         int i=l,j=r;
         int key=a[l];
         while(i<j) {
-            while(i<j&&a[j]>key) j--;
+            while(i<j&&a[j]>=key) j--;
             if(i<j) a[i++]=a[j];
-            while(i<j&&a[i]<key) i++;
+            while(i<j&&a[i]<=key) i++;
             if(i<j) a[j--]=a[i];
         }
         a[i]=key;
@@ -4843,14 +4843,4 @@ int __builtin_parity(unsigned int x)
 // usigned long long 版本在函数名后加 ll
 ```
 
-## 细节处理
 
-- (int)(x).size()
-- 1ll<<k
-- 上取整和 GCD 注意负数
-- 图论问题注意图不连通
-- 初始化注意 $0$ 和 $n+1$
-- 看清题目是从 $0$ 还是 $1$ 开始
-- 数组大小要开够
-- 字符串问题注意字符集
-- 二分注意上下界

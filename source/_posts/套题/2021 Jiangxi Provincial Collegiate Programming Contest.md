@@ -1,14 +1,14 @@
 ---
 title: 2021 Jiangxi Provincial Collegiate Programming Contest
 date: 2021-10-26 00:51:31
-tags: [DP,差分]
+tags: [DP,博弈论,二分,差分]
 categories: 套题
 mathjax: true
 ---
 
 | Solved |   A   |   B   |   C   |   D   |   E   |   F   |   G   |   H   |   I   |   J   |   K   |   L   |
 | :----: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-|  4/12  |   O   |   O   |   -   |   -   |   -   |   -   |   -   |   -   |   -   |   -   |   O   |   O   |
+|  6/12  |   O   |   O   |   -   |   -   |   -   |   -   |   -   |   Ø   |   -   |   Ø   |   O   |   O   |
 
 # 题目链接
 
@@ -92,7 +92,7 @@ int main() {
 }
 ```
 
-# Problem
+# Problem B. Continued Fraction
 
 **题意：**
 
@@ -140,6 +140,135 @@ int main() {
         for(auto v:res) cout<<v<<' ';
         cout<<y<<'\n';
     }
+    return 0;
+}
+```
+
+# Problem H. Hearthstone So Easy
+
+**题意：**
+
+A 和 B 做游戏，初始时都有 $n$ 血。
+
+每一轮双方都能执行一次操作，当轮到某人操作时，若是第 $i$ 轮则先扣除自身 $i$ 血。
+
+每次操作可以让自己回 $k$ 血或让对方扣 $k$ 血。
+
+先没血的人则输。
+
+**思路：**
+
+每回合开始时，A 和 B 的血量必定是相同的。
+
+我们考虑在第 $i+1$ $(i>0)$ 回合 A 刚好可以击杀 B，即在第 $i$ 回合 A 无法击杀 B。那么在第 $i$ 回合 B
+一定可以击杀 A。
+
+A 为了让 B 多扣血，一定会攻击 B，那么 B 除了在上述第 $i$ 轮攻击 A 获胜，其余轮都会回血来保持血量。
+
+所以只要 A 第一回合无法击杀 B，那么 B 一定赢。
+
+**代码：**
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+int main(){
+    int t;cin>>t;
+    while(t--){
+        int n,k;
+        cin>>n>>k;
+        if(n>1&&n<=k+1) cout<<"pllj"<<endl;
+        else cout<<"freesin"<<endl;
+    }
+    return 0;
+}
+```
+
+# Problem J. LRU
+
+**题意：**
+
+如果请求的块在缓存中可用，就会发生缓存命中。
+
+如果没有，CPU 只能从内存访问块并将块写入缓存。如果缓存未满，将块追加到缓存中。
+
+如果缓存已经满了，缓存中最长时间没有被访问的块将被新的块替换。
+
+现在请求块的顺序和缓存的容量已经给出，请确定缓存的最小容量，以确保至少有 $k$ 个请求命中缓存。
+
+**思路：**
+
+二分容量，用双端队列记录缓存中的块。
+
+因为缓存命中会访问块，所以需要记录索引和时间戳。
+
+每次弹出队头时间戳不是最新的索引，说明并不是最长时间没有被访问过的，用 map 记录索引的最新时间戳。
+
+**代码：**
+
+```cpp
+#include <bits/stdc++.h>
+#define SZ(x) (int)(x).size()
+#define ALL(x) (x).begin(),(x).end()
+#define PB push_back
+#define EB emplace_back
+#define MP make_pair
+#define FI first
+#define SE second
+using namespace std;
+typedef double DB;
+typedef long double LD;
+typedef long long LL;
+typedef unsigned long long ULL;
+typedef pair<int,int> PII;
+typedef vector<int> VI;
+typedef vector<LL> VLL;
+typedef vector<PII> VPII;
+// head
+int n,k;
+VI a;
+bool check(int mid) {
+    unordered_map<int,int> mp;
+    deque<PII> dq;
+    int sum=0,cnt=0;
+    for(int i=0;i<n;i++) {
+        int x=a[i];
+        while(SZ(dq)&&mp[dq.front().FI]!=dq.front().SE) dq.pop_front();
+        if(mp.count(x)) {
+            ++sum;
+            dq.EB(x,i);
+            mp[x]=i;
+        }
+        else if(cnt<mid) {
+            dq.EB(x,i);
+            mp[x]=i;
+            ++cnt;
+        }
+        else {
+            mp.erase(dq.front().FI);
+            dq.pop_front();
+            dq.EB(x,i);
+            mp[x]=i;
+
+        }
+    }
+    return sum>=k;
+}
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cin>>n>>k;
+    a.resize(n);
+    for(int i=0;i<n;i++) cin>>a[i];
+    int l=1,r=1e9;
+    while(l<r) {
+        int mid=l+r>>1;
+        if(check(mid)) r=mid;
+        else l=mid+1;
+    }
+    if(l==1e9) cout<<"cbddl"<<'\n';
+    else cout<<l<<'\n';
     return 0;
 }
 ```

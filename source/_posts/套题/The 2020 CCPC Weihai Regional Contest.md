@@ -1,7 +1,7 @@
 ---
 title: The 2020 CCPC Weihai Regional Contest
 date: 2021-10-20 23:40:42
-tags: []
+tags: [数论,DP]
 categories: 套题
 mathjax: true
 ---
@@ -274,7 +274,6 @@ $1\le T,n\le 30000$。
 **思路：**
 
 预处理出 $log$，将每个数拆为 $p^k$ 的形式，分组背包。
-
 
 **代码：**
 
