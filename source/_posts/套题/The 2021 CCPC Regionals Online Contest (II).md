@@ -16,6 +16,84 @@ mathjax: true
 
 <!--more-->
 
+# Problem 02. Kanade Doesn't Want to Learn CG
+
+**题意：**
+
+给出一条抛物线代表抛出篮球的轨迹，两条线段表示篮板和篮筐，碰到篮板会反弹，问是否能够进球。
+
+**思路：**
+
+注意：碰到篮筐无法进球。
+
+考虑抛物线与 $y=y_0$ 的交点：$ax^2+bx+c=y_0$，当 $\Delta=b^2-4a(c-y_0)\le 0$ 时，无法进球。
+
+求出方程的两个解：$x_l,x_r(x_l<x_r)$。
+
+当 $x_l \ge y_0$ 时，无法进球。
+
+接下来分为两种情况：
+
+1. 不反弹进球：$x_0<x_r<x1$。
+2. 反弹进球：$x_1<x_r<x_1+x_1-x_0$，因为必须打到篮板才能反弹，所以还得满足 $y_0<y|x=x_1\le y_2$。
+
+**代码：**
+
+```cpp
+#include <bits/stdc++.h>
+#define SZ(x) (int)(x).size()
+#define ALL(x) (x).begin(), (x).end()
+#define PB push_back
+#define EB emplace_back
+#define MP make_pair
+#define FI first
+#define SE second
+using namespace std;
+typedef double DB;
+typedef long double LD;
+typedef long long LL;
+typedef unsigned long long ULL;
+typedef pair<int, int> PII;
+typedef vector<int> VI;
+typedef vector<LL> VLL;
+typedef vector<PII> VPII;
+// head
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int T;
+    cin >> T;
+    while (T--) {
+        DB a, b, c;
+        cin >> a >> b >> c;
+        DB x0, x1, y0, y1, y2;
+        cin >> x0 >> x1 >> y0 >> y1 >> y2;
+        DB delta = b * b - 4 * a * (c - y0);
+        if (delta <= 0) {
+            cout << "No" << '\n';
+        }
+        else {
+            DB l = (-b + sqrt(delta)) / (2 * a), r = (-b - sqrt(delta)) / (2 * a);
+            if (l >= x0) {
+                cout << "No" << '\n';
+            }
+            else {
+                DB  y = a * x1 * x1 + b * x1 + c;
+                if (r > x0 && r < x1) {
+                    cout << "Yes" << '\n';
+                }
+                else if (y > y0 && y <= y2 && r > x1 && r < (x1 + x1 - x0))
+                    cout << "Yes" << '\n';
+                else {
+                   cout << "No" << '\n';
+                }
+            }
+        }
+    }
+    return 0;
+}
+```
+
 # Problem 04. Primality Test
 
 **题意：**
